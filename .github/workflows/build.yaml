@@ -1,0 +1,37 @@
+name: "ArgoCD sync"
+on: "push"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v1
+
+      - name: Build Kustomize
+        run: |
+          pwd
+          mkdir kustomize-build
+          kustomize build ./overlays/dev > ./kustomize-build/kustomize-build-output.yaml
+          ls -rlt
+          cd kustomize-build
+          cat kustomize-build-output.yaml
+
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: kustomize-build/
+          framework: kubernetes
+
+      - name: Install ArgoCD and execute Sync in ArgoCD
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x /usr/local/bin/argocd
+          ARGO_SERVER=ab8aee80cfa7145e5a03ff7ea4cf6a72-239770354.ap-northeast-2.elb.amazonaws.com
+          argocd app sync eksworkshop-cd-pipeline --auth-token ${{ secrets.ARGOCD_TOKEN }} --server  --insecure
+
