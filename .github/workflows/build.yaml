@@ -27,6 +27,7 @@ jobs:
         with:
           directory: kustomize-build/
           framework: kubernetes
+          check: CKV_K8S_17
 
       - name: Install ArgoCD and execute Sync in ArgoCD
         run: |
